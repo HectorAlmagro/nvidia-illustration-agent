@@ -44,6 +44,51 @@ def translate_to_english(client: NvidiaClient, text: str) -> str:
     ).strip()
 
 
+_BATCH_TRANSLATE_SYSTEM = (
+    "Translate each value in the JSON object to English. "
+    "Return ONLY valid JSON with the same keys and the translated values. "
+    "No explanation, no markdown, no extra text."
+)
+
+
+def batch_translate_to_english(client: NvidiaClient, texts: dict[str, str]) -> dict[str, str]:
+    """Translate multiple texts in a single LLM call.
+
+    Args:
+        texts: {key: original_text}  — empty/blank values are skipped.
+    Returns:
+        {key: translated_text}  — missing keys default to the original.
+    """
+    import json as _json
+    # Filter empty values — no need to translate them
+    to_translate = {k: v for k, v in texts.items() if v and v.strip()}
+    if not to_translate:
+        return {}
+    payload = _json.dumps(to_translate, ensure_ascii=False)
+    raw = client.chat(
+        [
+            {"role": "system", "content": _BATCH_TRANSLATE_SYSTEM},
+            {"role": "user", "content": payload},
+        ],
+        model=DEFAULT_LLM,
+        temperature=0.1,
+        max_tokens=2000,
+    ).strip()
+    # Strip possible code fences
+    if raw.startswith("```"):
+        import re as _re
+        raw = _re.sub(r"```[a-z]*\n?", "", raw).replace("```", "").strip()
+    try:
+        result = _json.loads(raw)
+        if not isinstance(result, dict):
+            raise ValueError("non-dict response")
+        return {k: str(v) for k, v in result.items() if k in texts}
+    except Exception as exc:
+        import sys as _sys
+        print(f"[image_gen] batch_translate parse failed ({exc}), falling back to empty", file=_sys.stderr)
+        return {}
+
+
 def ensure_english_fields(client: NvidiaClient, project: Project, scene: Scene) -> None:
     """Populate empty *_en fields for project + scene by translating.
 

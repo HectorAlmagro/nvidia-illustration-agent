@@ -7,7 +7,7 @@ import gradio as gr
 from nvidia_client import NvidiaClient
 from state import Project
 from story import StoryConversation
-from image_gen import generate_scene_image, generate_style_anchor_image, translate_to_english
+from image_gen import generate_scene_image, generate_style_anchor_image, translate_to_english, batch_translate_to_english
 
 
 load_dotenv()
@@ -322,14 +322,44 @@ def cb_chat(message, history, project, convo, selected_scene_id, char_name):
         return
 
     try:
-        reply, applied = convo.turn(message)
+        reply, applied, changed = convo.turn(message)
     except Exception as e:
         history.append({"role": "assistant", "content": f"[error] {e}"})
         yield ("", history, project, convo) + _refresh_views(project, selected_scene_id, char_name)
         return
 
     history.append({"role": "assistant", "content": reply})
-    if applied:
+    if applied and changed.any():
+        # Build dict of only the changed fields that need translation
+        texts: dict[str, str] = {}
+        if changed.synopsis:
+            texts["synopsis"] = project.synopsis
+        if changed.style_anchor:
+            texts["style_anchor"] = project.style_anchor
+        for name in changed.characters:
+            c = project.characters.get(name)
+            if c:
+                texts[f"char_{name}"] = c.description
+        for sid in changed.scene_ids:
+            s = project.scene_by_id(sid)
+            if s:
+                texts[f"scene_{sid}"] = s.prompt
+
+        translations = batch_translate_to_english(client, texts)
+
+        if changed.synopsis:
+            project.synopsis_en = translations.get("synopsis", project.synopsis)
+        if changed.style_anchor:
+            project.style_anchor_en = translations.get("style_anchor", project.style_anchor)
+        for name in changed.characters:
+            c = project.characters.get(name)
+            if c:
+                c.description_en = translations.get(f"char_{name}", c.description)
+        for sid in changed.scene_ids:
+            s = project.scene_by_id(sid)
+            if s:
+                s.prompt_en = translations.get(f"scene_{sid}", s.prompt)
+
         _save(project)
     yield ("", history, project, convo) + _refresh_views(project, selected_scene_id, char_name)
 

@@ -83,6 +83,28 @@ class NvidiaClient:
         temperature: float = 0.7,
         max_tokens: int = 2048,
     ) -> str:
+        import time
+        import json
+        # Pretty log prompt and params before call
+        prompt_lines = []
+        prompt_lines.append("\n[llm] LLM CALL")
+        prompt_lines.append(f"  model       : {model}")
+        prompt_lines.append(f"  temperature : {temperature}")
+        prompt_lines.append(f"  max_tokens  : {max_tokens}")
+        prompt_lines.append("  messages    :")
+        for m in messages:
+            role = m.get("role", "?")
+            content = m.get("content", "")
+            # Pretty print content, truncate if long
+            if isinstance(content, (list, dict)):
+                content_str = json.dumps(content, ensure_ascii=False, indent=2)
+            else:
+                content_str = str(content)
+            if len(content_str) > 800:
+                content_str = content_str[:800] + "... [truncated]"
+            prompt_lines.append(f"    - {role}: {content_str}")
+        print("\n".join(prompt_lines), file=sys.stderr)
+        t0 = time.perf_counter()
         try:
             resp = self.llm_client.chat.completions.create(
                 model=model,
@@ -93,8 +115,19 @@ class NvidiaClient:
         except Exception as exc:
             _log_openai_error("chat", exc, model, messages)
             raise
+        t1 = time.perf_counter()
         result = resp.choices[0].message.content or ""
         finish = resp.choices[0].finish_reason
+        # Log result summary
+        result_lines = []
+        result_lines.append(f"[llm] LLM RESULT ({t1-t0:.2f}s)")
+        result_lines.append(f"  model         : {model}")
+        result_lines.append(f"  finish_reason : {finish}")
+        result_lines.append(f"  output tokens : {getattr(resp.usage, 'completion_tokens', '?')}")
+        # Truncate result for log
+        result_preview = result[:800] + ("... [truncated]" if len(result) > 800 else "")
+        result_lines.append(f"  result        : {json.dumps(result_preview, ensure_ascii=False)}")
+        print("\n".join(result_lines), file=sys.stderr)
         if finish not in ("stop", "length"):
             _log(
                 f"WARNING chat — unexpected finish_reason",
