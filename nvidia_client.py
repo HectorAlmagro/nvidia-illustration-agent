@@ -1,11 +1,42 @@
 from __future__ import annotations
 import os
+import sys
 import base64
 from pathlib import Path
 from typing import Optional
 import requests
 from openai import OpenAI
 
+
+# ── logging helpers ────────────────────────────────────────────────────────────
+
+def _log(label: str, *lines: str) -> None:
+    print(f"[nvidia] {label}", file=sys.stderr)
+    for l in lines:
+        print(f"         {l}", file=sys.stderr)
+
+
+def _log_http_error(label: str, r: requests.Response, payload: dict | None = None) -> None:
+    _log(
+        f"ERROR {label} [{r.status_code}]",
+        f"url     : {r.url}",
+        f"response: {r.text[:1000]}",
+        *([(f"payload : {str({k: v for k, v in (payload or {}).items() if k != 'image'})}")] if payload else []),
+    )
+
+
+def _log_openai_error(label: str, exc: Exception, model: str, messages: list) -> None:
+    # Truncate message content so we don't flood the console
+    preview = [{"role": m["role"], "content": str(m.get("content", ""))[:200]} for m in messages]
+    _log(
+        f"ERROR {label}",
+        f"model   : {model}",
+        f"error   : {type(exc).__name__}: {exc}",
+        f"messages: {preview}",
+    )
+
+
+# ── constants ──────────────────────────────────────────────────────────────────
 
 LLM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 IMAGE_BASE_URL = "https://ai.api.nvidia.com/v1/genai"
@@ -52,13 +83,25 @@ class NvidiaClient:
         temperature: float = 0.7,
         max_tokens: int = 2048,
     ) -> str:
-        resp = self.llm_client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-        return resp.choices[0].message.content or ""
+        try:
+            resp = self.llm_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        except Exception as exc:
+            _log_openai_error("chat", exc, model, messages)
+            raise
+        result = resp.choices[0].message.content or ""
+        finish = resp.choices[0].finish_reason
+        if finish not in ("stop", "length"):
+            _log(
+                f"WARNING chat — unexpected finish_reason",
+                f"model         : {model}",
+                f"finish_reason : {finish}",
+            )
+        return result
 
     def chat_with_images(
         self,
@@ -96,6 +139,8 @@ class NvidiaClient:
             json={"contentType": "image/png", "description": description},
             timeout=60,
         )
+        if not r.ok:
+            _log_http_error("upload_asset (create)", r)
         r.raise_for_status()
         info = r.json()
         upload_url = info["uploadUrl"]
@@ -110,6 +155,8 @@ class NvidiaClient:
             },
             timeout=180,
         )
+        if not put.ok:
+            _log_http_error("upload_asset (put)", put)
         put.raise_for_status()
         return asset_id
 
@@ -158,14 +205,19 @@ class NvidiaClient:
 
         r = requests.post(url, headers=headers, json=payload, timeout=240)
         if r.status_code >= 400:
+            _log_http_error("generate_image", r, payload)
             raise RuntimeError(
                 f"Image gen failed [{r.status_code}] model={model}: {r.text[:400]}"
             )
         data = r.json()
         artifacts = data.get("artifacts") or []
         if artifacts and artifacts[0].get("base64"):
+            finish = artifacts[0].get("finishReason") or artifacts[0].get("finish_reason")
+            if finish and finish.upper() not in ("SUCCESS", ""):
+                _log(f"WARNING generate_image — finishReason={finish}", f"model: {model}")
             return base64.b64decode(artifacts[0]["base64"])
         b64 = data.get("image")
         if b64:
             return base64.b64decode(b64)
+        _log("ERROR generate_image — no image in response", f"model: {model}", f"response: {str(data)[:500]}")
         raise RuntimeError(f"No image in response: {str(data)[:300]}")

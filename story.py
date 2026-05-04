@@ -29,6 +29,11 @@ Rules:
 - scene `prompt` is just the action/setting; style + character details are appended at render time.
 - only emit the JSON block when the user explicitly confirms ("ok", "go", "lock it", "commit").
 - otherwise, talk in plain text, brainstorm, ask focused questions.
+
+IMPORTANT: All text values inside the JSON output (synopsis, style_anchor, character
+descriptions, scene prompts) MUST be written in English, regardless of the language
+used in the conversation. The conversation can be in any language, but the JSON fields
+must always be in English so they can be used directly as image-generation prompts.
 """
 
 
@@ -47,15 +52,18 @@ def extract_story_json(text: str) -> Optional[dict]:
 
 def apply_story_to_project(project: Project, data: dict) -> None:
     project.synopsis = data.get("synopsis", project.synopsis)
+    project.synopsis_en = project.synopsis  # story LLM outputs English
     project.style_anchor = data.get("style_anchor", project.style_anchor)
+    project.style_anchor_en = project.style_anchor  # story LLM outputs English
 
     for c in data.get("characters", []):
         name = c["name"]
         if name in project.characters:
             project.characters[name].description = c["description"]
+            project.characters[name].description_en = c["description"]
         else:
             project.characters[name] = Character(
-                name=name, description=c["description"]
+                name=name, description=c["description"], description_en=c["description"]
             )
 
     existing_by_id = {s.id: s for s in project.scenes}
@@ -66,6 +74,7 @@ def apply_story_to_project(project: Project, data: dict) -> None:
             old = existing_by_id[sid]
             old.title = s.get("title", old.title)
             old.prompt = s.get("prompt", old.prompt)
+            old.prompt_en = old.prompt  # story LLM outputs English
             old.characters = s.get("characters", old.characters)
             new_scenes.append(old)
         else:
@@ -74,6 +83,7 @@ def apply_story_to_project(project: Project, data: dict) -> None:
                     id=sid,
                     title=s.get("title", f"Scene {sid}"),
                     prompt=s["prompt"],
+                    prompt_en=s["prompt"],  # story LLM outputs English
                     characters=s.get("characters", []),
                 )
             )

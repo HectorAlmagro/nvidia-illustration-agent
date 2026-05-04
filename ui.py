@@ -7,7 +7,7 @@ import gradio as gr
 from nvidia_client import NvidiaClient
 from state import Project
 from story import StoryConversation
-from image_gen import generate_scene_image, generate_style_anchor_image
+from image_gen import generate_scene_image, generate_style_anchor_image, translate_to_english
 
 
 load_dotenv()
@@ -234,6 +234,10 @@ def _empty_load_outputs():
         gr.update(interactive=False),               # set_current_btn
         [],                                         # scene_versions_gallery
         "",                                         # selected_version_state
+        "",                                         # synopsis_en_box
+        "",                                         # style_en_box
+        "",                                         # char_desc_en_box
+        "",                                         # scene_prompt_en_box
     )
 
 
@@ -250,10 +254,12 @@ def _hydrate_outputs(project: Project, convo: StoryConversation):
         scene_desc = s.prompt
         scene_img = _safe_path(s.image_path)
         scene_prompt = s.last_full_prompt or ""
+        scene_prompt_en = s.prompt_en or ""
     else:
         scene_desc = ""
         scene_img = None
         scene_prompt = ""
+        scene_prompt_en = ""
 
     redo_btn_u = _redo_btn_update(project, first_scene_id)
     del_ver_u, set_cur_u = _version_btn_updates(project, first_scene_id)
@@ -284,6 +290,10 @@ def _hydrate_outputs(project: Project, convo: StoryConversation):
         set_cur_u,
         _scene_versions(project, first_scene_id),
         "",
+        project.synopsis_en or "",
+        project.style_anchor_en or "",
+        (project.characters[first_char].description_en if first_char else "") or "",
+        scene_prompt_en,
     )
 
 
@@ -335,6 +345,7 @@ def _refresh_views(project: Project | None, selected_scene_id, char_name=None):
             [],
             NO_PROJECT_MD, "",
             None,
+            "", "", "", "",
         )
     chars = list(project.characters.keys())
     # If the currently selected character no longer exists, pick the first one
@@ -348,10 +359,12 @@ def _refresh_views(project: Project | None, selected_scene_id, char_name=None):
         char_desc_val = _md_or_empty(char_desc)
         char_desc_box_val = char_desc
         char_gallery_val = _ref_images_for(project, cur_char)
+        char_desc_en_val = project.characters[cur_char].description_en or ""
     else:
         char_desc_val = "_no characters yet_"
         char_desc_box_val = ""
         char_gallery_val = []
+        char_desc_en_val = ""
 
     if selected_scene_id is not None:
         s = project.scene_by_id(int(selected_scene_id))
@@ -359,14 +372,17 @@ def _refresh_views(project: Project | None, selected_scene_id, char_name=None):
             scene_desc_val = _md_or_empty(s.prompt)
             scene_desc_box_val = s.prompt
             scene_img_val = _safe_path(s.image_path)
+            scene_prompt_en_val = s.prompt_en or ""
         else:
             scene_desc_val = "_no scenes yet_"
             scene_desc_box_val = ""
             scene_img_val = None
+            scene_prompt_en_val = ""
     else:
         scene_desc_val = "_no scenes yet_"
         scene_desc_box_val = ""
         scene_img_val = None
+        scene_prompt_en_val = ""
 
     return (
         _md_or_empty(project.synopsis),
@@ -381,6 +397,10 @@ def _refresh_views(project: Project | None, selected_scene_id, char_name=None):
         scene_desc_val,
         scene_desc_box_val,
         scene_img_val,
+        project.synopsis_en or "",
+        project.style_anchor_en or "",
+        char_desc_en_val,
+        scene_prompt_en_val,
     )
 
 
@@ -389,28 +409,32 @@ def _refresh_views(project: Project | None, selected_scene_id, char_name=None):
 def cb_save_synopsis(project, text):
     if not project:
         gr.Warning("No project loaded")
-        return gr.update(), gr.update(), gr.update()
+        return gr.update(), gr.update(), gr.update(), gr.update()
     project.synopsis = text or ""
+    project.synopsis_en = translate_to_english(client, project.synopsis)
     _save(project)
     gr.Info("Synopsis saved")
     return (
         gr.update(value=_md_or_empty(project.synopsis), visible=True),
         gr.update(visible=False),
         gr.update(visible=False),
+        project.synopsis_en,
     )
 
 
 def cb_save_style(project, text):
     if not project:
         gr.Warning("No project loaded")
-        return gr.update(), gr.update(), gr.update()
+        return gr.update(), gr.update(), gr.update(), gr.update()
     project.style_anchor = text or ""
+    project.style_anchor_en = translate_to_english(client, project.style_anchor)
     _save(project)
     gr.Info("Style anchor saved")
     return (
         gr.update(value=_md_or_empty(project.style_anchor), visible=True),
         gr.update(visible=False),
         gr.update(visible=False),
+        project.style_anchor_en,
     )
 
 
@@ -418,22 +442,24 @@ def cb_save_style(project, text):
 
 def cb_select_character(project, name):
     if not project or not name or name not in project.characters:
-        return NO_PROJECT_MD, "", []
+        return NO_PROJECT_MD, "", [], ""
     c = project.characters[name]
-    return _md_or_empty(c.description), c.description, _ref_images_for(project, name)
+    return _md_or_empty(c.description), c.description, _ref_images_for(project, name), c.description_en or ""
 
 
 def cb_save_character(project, name, desc):
     if not project or not name or name not in project.characters:
         gr.Warning("No character selected")
-        return gr.update(), gr.update(), gr.update()
+        return gr.update(), gr.update(), gr.update(), gr.update()
     project.characters[name].description = desc or ""
+    project.characters[name].description_en = translate_to_english(client, desc or "")
     _save(project)
     gr.Info(f"Saved {name}")
     return (
         gr.update(value=_md_or_empty(desc), visible=True),
         gr.update(visible=False),
         gr.update(visible=False),
+        project.characters[name].description_en,
     )
 
 
@@ -443,11 +469,11 @@ def cb_select_scene_row(project, current_id, evt: gr.SelectData):
     disabled = gr.update(interactive=False)
     if not project:
         return (current_id, gr.update(), NO_PROJECT_MD, "", None, "",
-                [], "", disabled, disabled, disabled)
+                [], "", disabled, disabled, disabled, "")
     idx = evt.index[0] if isinstance(evt.index, (list, tuple)) else evt.index
     if idx is None or idx < 0 or idx >= len(project.scenes):
         return (current_id, gr.update(), NO_PROJECT_MD, "", None, "",
-                [], "", disabled, disabled, disabled)
+                [], "", disabled, disabled, disabled, "")
     s = project.scenes[idx]
     del_ver_u, set_cur_u = _version_btn_updates(project, s.id)
     return (
@@ -462,18 +488,20 @@ def cb_select_scene_row(project, current_id, evt: gr.SelectData):
         _redo_btn_update(project, s.id),
         del_ver_u,
         set_cur_u,
+        s.prompt_en or "",
     )
 
 
 def cb_save_scene_desc(project, scene_id, desc):
     if not project or scene_id is None:
         gr.Warning("No scene selected")
-        return gr.update(), gr.update(), gr.update(), _scenes_rows(project, scene_id)
+        return gr.update(), gr.update(), gr.update(), _scenes_rows(project, scene_id), gr.update()
     s = project.scene_by_id(int(scene_id))
     if not s:
         gr.Warning("Scene not found")
-        return gr.update(), gr.update(), gr.update(), _scenes_rows(project, scene_id)
+        return gr.update(), gr.update(), gr.update(), _scenes_rows(project, scene_id), gr.update()
     s.prompt = desc or ""
+    s.prompt_en = translate_to_english(client, s.prompt)
     _save(project)
     gr.Info(f"Saved scene {s.id}")
     return (
@@ -481,6 +509,7 @@ def cb_save_scene_desc(project, scene_id, desc):
         gr.update(visible=False),
         gr.update(visible=False),
         _scenes_rows(project, scene_id),
+        s.prompt_en,
     )
 
 
@@ -915,11 +944,19 @@ def build_ui():
                              synopsis_actions, synopsis_save_btn, synopsis_cancel_btn) = _editable_block(
                                 "Synopsis", lines=5
                             )
+                            synopsis_en_box = gr.Textbox(
+                                label="English version (for image generation)",
+                                interactive=False, lines=2, show_label=True,
+                            )
 
                             gr.Markdown("#### Style anchor (text)")
                             (style_md, style_edit_btn, style_box,
                              style_actions, style_save_btn, style_cancel_btn) = _editable_block(
                                 "Style anchor", lines=4
+                            )
+                            style_en_box = gr.Textbox(
+                                label="English version (for image generation)",
+                                interactive=False, lines=2, show_label=True,
                             )
 
                             with gr.Accordion("Style anchor image", open=False):
@@ -949,6 +986,10 @@ def build_ui():
                              char_desc_actions, char_desc_save_btn, char_desc_cancel_btn) = _editable_block(
                                 "Visual description (used in every prompt)", lines=6
                             )
+                            char_desc_en_box = gr.Textbox(
+                                label="English version (for image generation)",
+                                interactive=False, lines=3, show_label=True,
+                            )
                             gr.Markdown("#### Past appearances")
                             char_gallery = gr.Gallery(
                                 show_label=False, columns=4, height=260,
@@ -966,6 +1007,10 @@ def build_ui():
                             (scene_desc_md, scene_desc_edit_btn, scene_desc_box,
                              scene_desc_actions, scene_desc_save_btn, scene_desc_cancel_btn) = _editable_block(
                                 "Scene description (used directly in prompt)", lines=4
+                            )
+                            scene_prompt_en_box = gr.Textbox(
+                                label="English version (for image generation)",
+                                interactive=False, lines=3, show_label=True,
                             )
 
                             scene_image = gr.Image(label="Current image", height=420)
@@ -1062,6 +1107,10 @@ def build_ui():
             set_current_btn,
             scene_versions_gallery,
             selected_version_state,
+            synopsis_en_box,
+            style_en_box,
+            char_desc_en_box,
+            scene_prompt_en_box,
         ]
 
         project_picker.change(cb_load, [project_picker], load_outputs)
@@ -1100,6 +1149,10 @@ def build_ui():
             scenes_table,
             scene_desc_md, scene_desc_box,
             scene_image,
+            synopsis_en_box,
+            style_en_box,
+            char_desc_en_box,
+            scene_prompt_en_box,
         ]
         chat_outputs = [msg_in, chatbot, project_state, convo_state] + chat_refresh_outputs
         # Both wired: hidden send_btn fires from JS on Enter; msg_in.submit is a
@@ -1120,25 +1173,25 @@ def build_ui():
         synopsis_cancel_btn.click(_hide_edit, None, [synopsis_md, synopsis_box, synopsis_actions])
         synopsis_save_btn.click(
             cb_save_synopsis, [project_state, synopsis_box],
-            [synopsis_md, synopsis_box, synopsis_actions],
+            [synopsis_md, synopsis_box, synopsis_actions, synopsis_en_box],
         )
         style_edit_btn.click(_show_edit, None, [style_md, style_box, style_actions])
         style_cancel_btn.click(_hide_edit, None, [style_md, style_box, style_actions])
         style_save_btn.click(
             cb_save_style, [project_state, style_box],
-            [style_md, style_box, style_actions],
+            [style_md, style_box, style_actions, style_en_box],
         )
 
         # ---- characters ----
         char_picker.change(
             cb_select_character, [project_state, char_picker],
-            [char_desc_md, char_desc_box, char_gallery],
+            [char_desc_md, char_desc_box, char_gallery, char_desc_en_box],
         )
         char_desc_edit_btn.click(_show_edit, None, [char_desc_md, char_desc_box, char_desc_actions])
         char_desc_cancel_btn.click(_hide_edit, None, [char_desc_md, char_desc_box, char_desc_actions])
         char_desc_save_btn.click(
             cb_save_character, [project_state, char_picker, char_desc_box],
-            [char_desc_md, char_desc_box, char_desc_actions],
+            [char_desc_md, char_desc_box, char_desc_actions, char_desc_en_box],
         )
 
         # ---- scenes ----
@@ -1157,6 +1210,7 @@ def build_ui():
                 redo_btn,
                 delete_version_btn,
                 set_current_btn,
+                scene_prompt_en_box,
             ],
         )
         scene_desc_edit_btn.click(_show_edit, None, [scene_desc_md, scene_desc_box, scene_desc_actions])
@@ -1164,7 +1218,7 @@ def build_ui():
         scene_desc_save_btn.click(
             cb_save_scene_desc,
             [project_state, selected_scene_state, scene_desc_box],
-            [scene_desc_md, scene_desc_box, scene_desc_actions, scenes_table],
+            [scene_desc_md, scene_desc_box, scene_desc_actions, scenes_table, scene_prompt_en_box],
         )
 
         gen_outputs = [

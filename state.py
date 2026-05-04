@@ -9,6 +9,7 @@ from typing import Optional
 class Character:
     name: str
     description: str
+    description_en: str = ""
     reference_images: list[str] = field(default_factory=list)
 
 
@@ -17,6 +18,7 @@ class Scene:
     id: int
     title: str
     prompt: str
+    prompt_en: str = ""
     characters: list[str] = field(default_factory=list)
     image_path: Optional[str] = None
     versions: list[str] = field(default_factory=list)
@@ -29,9 +31,11 @@ class Scene:
 class Project:
     name: str
     style_anchor: str = ""
+    style_anchor_en: str = ""
     style_image: Optional[str] = None
     style_image_prompt: str = ""
     synopsis: str = ""
+    synopsis_en: str = ""
     characters: dict[str, Character] = field(default_factory=dict)
     scenes: list[Scene] = field(default_factory=list)
 
@@ -40,9 +44,11 @@ class Project:
         data = {
             "name": self.name,
             "style_anchor": self.style_anchor,
+            "style_anchor_en": self.style_anchor_en,
             "style_image": self.style_image,
             "style_image_prompt": self.style_image_prompt,
             "synopsis": self.synopsis,
+            "synopsis_en": self.synopsis_en,
             "characters": {k: asdict(v) for k, v in self.characters.items()},
             "scenes": [asdict(s) for s in self.scenes],
         }
