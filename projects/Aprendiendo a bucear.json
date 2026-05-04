@@ -1,0 +1,121 @@
+{
+  "name": "Aprendiendo a bucear",
+  "style_anchor": "Un estilo Pixar con colores vibrantes y detalles ricos, con líneas suaves y colores pastel para los personajes y fondos más detallados y realistas. Los entornos deben ser muy detallados y precisos, con texturas y patrones que reflejen la realidad, como la arena de la playa, la roca del arrecife de coral o la superficie del agua. Los personajes deben ser muy expresivos, con facialidades y posturas que transmitan emociones y personalidad. Los ojos deben ser grandes y expresivos, con pupilas que cambien de tamaño según la emoción. Los colores deben ser vivos y saturados, con un enfoque en los colores del arcoíris para reflejar la belleza y la diversidad del mundo submarino. La iluminación debe ser suave y cálida, con sombras que acentúen la textura y la forma de los objetos. El trazo debe ser suave y fluido, con líneas que se curven y se doblen para crear un sentido de movimiento y energía. En general, el estilo debe ser alegre, colorido y emocional, con un enfoque en la exploración y el descubrimiento del mundo submarino.",
+  "style_image": "/Users/hector.almagro/Documents/nvidia-illustration-agent/output/Aprendiendo a bucear/style_anchor.png",
+  "style_image_prompt": "A Pixar-style aesthetic with vibrant colors and rich details, featuring soft lines and pastel colors for characters and more detailed and realistic backgrounds. The environments should be highly detailed and precise, with textures and patterns that reflect reality, such as beach sand, coral reef rock, or the surface of the water. Characters should be highly expressive, with facial expressions and postures that convey emotions and personality. Eyes should be large and expressive, with pupils that change size according to emotion. Colors should be vivid and saturated, with a focus on rainbow colors to reflect the beauty and diversity of the underwater world. Lighting should be soft and warm, with shadows that accentuate the texture and shape of objects. Line quality should be smooth and fluid, with lines that curve and bend to create a sense of movement and energy. Overall, the style should be cheerful, colorful, and emotional, with a focus on exploring and discovering the underwater world.",
+  "synopsis": "Micaela, una niña valiente y curiosa de 3 años, se enfrenta a su mayor desafío: superar su miedo al agua. Con la ayuda de su madre, Palma, una mujer apasionada y paciente, Micaela se embarca en un viaje emocionante de descubrimiento y crecimiento. Desde la primera inmersión en la piscina hasta la exploración de los fondos marinos, Micaela aprenderá a vencer sus temores y a descubrir el mundo submarino, lleno de color, belleza y sorpresas. Con cada paso, Micaela se convertirá en una niña más segura y confiada, lista para enfrentar nuevos desafíos y explorar los límites de su propio potencial.",
+  "characters": {
+    "Micaela": {
+      "name": "Micaela",
+      "description": "Una niña de 3 años con un rostro redondeado y facciones suaves, propias de su edad. La piel es clara y uniforme. Los ojos son grandes en proporción al rostro, de forma redondeada y color oscuro. Las cejas son finas y suaves, poco marcadas. La nariz es pequeña y corta, con un puente poco pronunciado. Los labios son pequeños, con el inferior ligeramente más lleno que el superior. El cabello es liso, de color castaño claro, con buena densidad y textura fina. Asumiéndolo suelto, sería largo y caería de forma recta alrededor del rostro. La línea del cabello es regular y la frente es de tamaño medio. Las orejas son pequeñas y proporcionadas al tamaño de la cabeza. Lleva pequeños pendientes, probablemente de tipo botón, en ambas orejas. En conjunto, sus rasgos son delicados y armónicos, con proporciones equilibradas.",
+      "reference_images": []
+    },
+    "Palma": {
+      "name": "Palma",
+      "description": "Una mujer adulta de 30-40 años con un rostro ovalado y piel clara, y ligero sobrepeso. Sus ojos son de tamaño medio a grande, con forma almendrada y de color oscuro. Las cejas son de grosor medio y tienen una forma natural, ligeramente arqueada. La nariz es de tamaño medio, recta y proporcionada al resto del rostro. Los labios son de grosor medio, bien definidos. El cabello es largo y liso, con un color oscuro en la raíz que se va transformando hacia tonos rojizos o rosados en las puntas. Tiene una sonrisa cálida y amable.",
+      "reference_images": []
+    }
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "title": "Micaela se prepara para ir a la piscina",
+      "prompt": "En una habitación infantil llena de juguetes —muñecos colocados en estanterías, piezas de construcción por el suelo y algún peluche sobre la cama— Micaela está de pie frente a un espejo. La vemos directamente de frente, como si nosotros fuéramos su reflejo, ocupando el centro de la escena.\n\nLleva puesto un bañador de una pieza, y su postura muestra incomodidad: los hombros ligeramente encogidos y el cuerpo algo rígido. Mira al frente con gesto de desánimo mientras se queja porque no quiere ir a natación, transmitiendo tristeza y cierta resistencia.\n\nDetrás de ella aparece Palma, en segundo plano, moviéndose con tranquilidad mientras prepara una mochila abierta sobre la cama o una silla. Va guardando cosas de forma ordenada y sin mirar a Micaela, concentrada en la tarea, como si la situación fuera algo habitual.\n\nLa escena refleja un contraste claro: en primer plano, la queja y el malestar de Micaela; al fondo, la calma y paciencia de Palma, todo dentro de una habitación cotidiana, acogedora y algo desordenada por los juguetes.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": "/Users/hector.almagro/Documents/nvidia-illustration-agent/output/Aprendiendo a bucear/scene_01_v03.png",
+      "versions": [
+        "/Users/hector.almagro/Documents/nvidia-illustration-agent/output/Aprendiendo a bucear/scene_01_v02.png"
+      ],
+      "seed": 419055681,
+      "review_notes": [],
+      "last_full_prompt": "In a cluttered, cozy children's room filled with toys - dolls perched on shelves, building blocks scattered across the floor, and a stuffed animal sitting on the bed - two figures occupy the scene: Micaela, a tiny 3-year-old girl with a round face, soft features, and large, dark eyes, stands in the center, wearing a one-piece swimsuit, her shoulders slightly hunched and body rigid, looking directly at the viewer with a despondent expression, her small mouth pursed in discontent as she complains about not wanting to go swimming. Behind her, Palma, a tall adult woman with an oval face, clear skin, and dark, almond-shaped eyes, moves calmly in the background, packing a open backpack on the bed or a chair, her long, dark hair with reddish tips falling down her back, her focus on the task at hand, exuding patience and tranquility. The scene is framed in a warm, gentle light, with soft shadows accentuating the textures and forms of the objects, and a vibrant, pastel color palette, as if captured through a softly focused lens, with a mix of realistic and stylized elements, blending the detailed environment with the expressive, cartoon-like characters, in a style reminiscent of Pixar, with bold lines, and a lively, energetic atmosphere."
+    },
+    {
+      "id": 2,
+      "title": "Micaela se enfrenta a su miedo en la piscina",
+      "prompt": "Micaela se acerca a la piscina y se detiene en el borde, mirando el agua con miedo. Palma la anima a meterse en el agua.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": null,
+      "versions": [],
+      "seed": null,
+      "review_notes": [],
+      "last_full_prompt": ""
+    },
+    {
+      "id": 3,
+      "title": "Micaela se sumerge en el agua",
+      "prompt": "Micaela se sienta cómoda en la piscina y Palma le enseña a usar el equipo de buceo. Micaela se sumerge en el agua y comienza a explorar.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": null,
+      "versions": [],
+      "seed": null,
+      "review_notes": [],
+      "last_full_prompt": ""
+    },
+    {
+      "id": 4,
+      "title": "Micaela y Palma van al mar",
+      "prompt": "Micaela y Palma van al mar para practicar el buceo en un entorno más natural. Micaela se siente emocionada y un poco nerviosa.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": "/Users/hector.almagro/Documents/nvidia-illustration-agent/output/Aprendiendo a bucear/scene_04_v01.png",
+      "versions": [],
+      "seed": 1558932904,
+      "review_notes": [],
+      "last_full_prompt": "On a sunny day, at the edge of a calm, turquoise sea, with gentle waves caressing the shore, Micaela, a 3-year-old girl with long brown hair, big curious eyes, and a timid smile, stands beside Palma, a warm and helpful woman in her 30s or 40s with dark brown hair, wearing everyday clothes, not swimwear, as they prepare for their snorkeling adventure in this natural setting, Micaela looking excited and a bit nervous, her eyes fixed on the water, while Palma, with her calm and reassuring presence, offers a warm smile, as the camera captures them in a medium shot, with a slightly low angle, emphasizing their figures against the vast, serene landscape, the soft pastel colors of the cartoon style blending with the realistic details of the sea and surrounding environment, creating a vibrant and rich visual experience."
+    },
+    {
+      "id": 5,
+      "title": "Micaela se enfrenta a un pez grande",
+      "prompt": "Un pez grande y colorido se acerca a Micaela, y ella se asusta. Palma la calma y le explica que el pez no es peligroso.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": null,
+      "versions": [],
+      "seed": null,
+      "review_notes": [],
+      "last_full_prompt": ""
+    },
+    {
+      "id": 6,
+      "title": "Micaela y Palma bucean en un arrecife de coral",
+      "prompt": "Micaela y Palma bucean en un arrecife de coral, rodeadas de peces de todos los colores. Micaela se siente emocionada y fascinada por la belleza del arrecife.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": null,
+      "versions": [],
+      "seed": null,
+      "review_notes": [],
+      "last_full_prompt": ""
+    },
+    {
+      "id": 7,
+      "title": "Micaela se enfrenta a una corriente fuerte",
+      "prompt": "Una corriente fuerte se forma y Micaela se siente arrastrada lejos de Palma. Se asusta y se siente sola, pero recuerda las lecciones que Palma le ha enseñado y se calma.",
+      "characters": [
+        "Micaela",
+        "Palma"
+      ],
+      "image_path": null,
+      "versions": [],
+      "seed": null,
+      "review_notes": [],
+      "last_full_prompt": ""
+    }
+  ]
+}
